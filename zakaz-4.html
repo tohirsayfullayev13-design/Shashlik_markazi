@@ -1,0 +1,682 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Restoran</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+body{font-family:sans-serif;background:#111;color:#eee;min-height:100vh;}
+
+#setup{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;padding:20px;gap:12px;background:linear-gradient(135deg,#1a1a2e,#0d0d1a);}
+#setup h1{color:#f5c842;font-size:22px;text-align:center;}
+.sbox{background:#1a1a2e;border-radius:14px;padding:18px;width:100%;max-width:420px;border:1px solid #2a2a4a;}
+.sbox h3{color:#f5c842;font-size:14px;margin-bottom:10px;}
+.sinp{width:100%;padding:12px;border:1.5px solid #2a2a4a;border-radius:8px;font-size:14px;background:#0d0d1a;color:#fff;outline:none;margin:6px 0 10px;}
+.sinp:focus{border-color:#f5c842;}
+.sbtn{width:100%;padding:13px;background:#f5c842;border:none;border-radius:8px;font-size:15px;font-weight:700;cursor:pointer;color:#111;}
+
+#home{display:none;flex-direction:column;min-height:100vh;}
+.topbar{background:#1a1a2e;padding:12px 14px;display:flex;align-items:center;justify-content:space-between;border-bottom:2px solid #f5c842;position:sticky;top:0;z-index:200;}
+.topbar-title{color:#f5c842;font-size:16px;font-weight:700;}
+.role-tabs{display:flex;gap:6px;}
+.rtab{padding:7px 13px;border-radius:20px;border:1.5px solid #333;background:none;color:#888;font-size:13px;cursor:pointer;font-family:sans-serif;}
+.rtab.on{background:#f5c842;border-color:#f5c842;color:#111;font-weight:700;}
+.cdot{width:9px;height:9px;border-radius:50%;background:#2ecc71;animation:blink 1.5s infinite;display:inline-block;margin-right:6px;}
+.cdot.off{background:#e74c3c;animation:none;}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+
+/* TABLES */
+.tables-wrap{padding:14px;}
+.sec-title{color:#888;font-size:12px;letter-spacing:2px;text-transform:uppercase;margin-bottom:10px;}
+.legend{display:flex;gap:12px;margin-bottom:12px;flex-wrap:wrap;}
+.leg{display:flex;align-items:center;gap:5px;font-size:12px;color:#777;}
+.ldot{width:10px;height:10px;border-radius:3px;}
+.tgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:9px;max-width:560px;margin:0 auto;}
+@media(min-width:380px){.tgrid{grid-template-columns:repeat(5,1fr);}}
+.tcell{aspect-ratio:1;border-radius:10px;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;border:2px solid #333;background:#1a1a1a;transition:.15s;position:relative;user-select:none;}
+.tcell:active{transform:scale(.93);}
+.tcell.empty{border-color:#2ecc71;background:#071209;}
+.tcell.active{border-color:#f5c842;background:#130f00;}
+.tcell.done{border-color:#3498db;background:#001020;}
+.tcell .tnum{font-size:17px;font-weight:700;}
+.tcell .tlbl{font-size:10px;margin-top:1px;}
+.tcell.empty .tnum,.tcell.empty .tlbl{color:#2ecc71;}
+.tcell.active .tnum,.tcell.active .tlbl{color:#f5c842;}
+.tcell.done .tnum,.tcell.done .tlbl{color:#3498db;}
+
+/* MODAL */
+#modal{position:fixed;inset:0;background:rgba(0,0,0,.9);z-index:500;display:none;align-items:flex-end;justify-content:center;}
+#modal.open{display:flex;}
+.mbox{background:#1a1a2e;border-radius:18px 18px 0 0;width:100%;max-width:520px;max-height:93vh;overflow-y:auto;padding:18px 15px 32px;}
+.mhead{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;}
+.mtitle{color:#f5c842;font-size:18px;font-weight:700;}
+.mclose{width:32px;height:32px;border-radius:50%;border:none;background:#2a2a4a;color:#aaa;font-size:20px;cursor:pointer;}
+
+/* EXISTING ORDERS */
+.eord-card{background:#0d0d1a;border-radius:10px;padding:12px;margin-bottom:10px;border-left:3px solid #f5c842;}
+.eord-card.jarayon{border-left-color:#3498db;}
+.eord-card.tayyor{border-left-color:#2ecc71;}
+.eord-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;gap:6px;flex-wrap:wrap;}
+.eord-who{font-size:12px;color:#aaa;font-weight:600;}
+.ebadge{font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;}
+.eby{background:#2a1a00;color:#f5c842;} .ebj{background:#001a2a;color:#3498db;} .ebt{background:#001a0a;color:#2ecc71;}
+.eitem-row{display:flex;justify-content:space-between;font-size:13px;padding:3px 0;color:#ccc;}
+.eitem-price{color:#f5c842;}
+.eord-total{display:flex;justify-content:space-between;font-size:13px;font-weight:700;color:#f5c842;padding:6px 0 0;border-top:1px solid #2a2a4a;margin-top:4px;}
+
+/* ADD TO EXISTING button */
+.add-to-btn{width:100%;padding:9px;background:#1a2a1a;border:1.5px solid #2ecc71;border-radius:8px;color:#2ecc71;font-size:13px;font-weight:700;cursor:pointer;margin-top:8px;font-family:sans-serif;}
+.add-to-btn:active{background:#2ecc71;color:#000;}
+
+/* ADD TO EXISTING mini form */
+.add-to-form{background:#111;border-radius:8px;padding:12px;margin-top:8px;display:none;border:1px solid #2a2a4a;}
+.add-to-form.open{display:block;}
+
+.form-sep{border:none;border-top:1px solid #2a2a4a;margin:14px 0;}
+.flbl{font-size:11px;color:#888;letter-spacing:1px;text-transform:uppercase;margin-bottom:4px;display:block;margin-top:10px;}
+.finp{width:100%;padding:11px;border:1.5px solid #2a2a4a;border-radius:8px;font-size:14px;background:#0d0d1a;color:#fff;outline:none;margin-bottom:4px;font-family:sans-serif;}
+.finp:focus{border-color:#f5c842;}
+textarea.finp{min-height:55px;resize:none;}
+
+.menu-sec{background:#0d0d1a;border-radius:10px;padding:12px;margin:10px 0;border:1px solid #2a2a4a;}
+.menu-sec-title{font-size:11px;color:#888;letter-spacing:1px;text-transform:uppercase;margin-bottom:10px;}
+.mgrid{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+.mi{background:#1a1a2e;border:1.5px solid #2a2a4a;border-radius:8px;padding:10px;cursor:pointer;transition:.15s;position:relative;}
+.mi:active{transform:scale(.96);}
+.mi.sel{border-color:#f5c842;background:#1a1500;}
+.mi.sel::after{content:'✓';position:absolute;top:6px;right:8px;color:#f5c842;font-weight:700;font-size:13px;}
+.mi-name{font-size:13px;font-weight:600;padding-right:16px;line-height:1.3;}
+.mi-price{font-size:11px;color:#f5c842;margin-top:3px;}
+.miqty{display:flex;align-items:center;gap:8px;margin-top:7px;}
+.qbtn{width:26px;height:26px;border-radius:6px;border:none;background:#2a2a4a;color:#fff;font-size:16px;cursor:pointer;}
+.qnum{font-size:14px;font-weight:700;color:#f5c842;min-width:18px;text-align:center;}
+
+.manual-box{background:#0d0d1a;border-radius:10px;padding:12px;margin:10px 0;border:1px solid #2a2a4a;}
+.irow{display:flex;gap:7px;align-items:center;margin-bottom:8px;}
+.irow .finp{flex:1;padding:9px;margin-bottom:0;}
+.irow .finp-s{width:80px;padding:9px;flex-shrink:0;margin-bottom:0;}
+.irow .finp-xs{width:56px;padding:9px;flex-shrink:0;margin-bottom:0;}
+.idel{width:30px;height:30px;border-radius:50%;border:none;background:#2a0000;color:#e74c3c;font-size:18px;cursor:pointer;flex-shrink:0;}
+.add-btn{width:100%;padding:10px;background:none;border:2px dashed #2a2a4a;border-radius:8px;color:#888;font-size:13px;cursor:pointer;margin:4px 0 10px;font-family:sans-serif;}
+.total-line{background:#0d0d1a;border-radius:8px;padding:10px 14px;font-size:17px;font-weight:700;color:#f5c842;text-align:center;margin:8px 0;display:none;}
+.submit-btn{width:100%;padding:15px;background:#f5c842;border:none;border-radius:10px;font-size:16px;font-weight:700;color:#111;cursor:pointer;font-family:sans-serif;margin-top:6px;}
+.submit-btn:active{background:#d4a800;}
+.save-add-btn{width:100%;padding:12px;background:#2ecc71;border:none;border-radius:8px;font-size:14px;font-weight:700;color:#000;cursor:pointer;font-family:sans-serif;margin-top:6px;}
+
+/* BOSS */
+.boss-wrap{padding:14px;max-width:600px;margin:0 auto;}
+.bstats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px;}
+.bstat{background:#1a1a2e;border-radius:10px;padding:11px;text-align:center;}
+.bstat-num{font-size:24px;font-weight:700;}
+.bstat-lbl{font-size:10px;color:#555;text-transform:uppercase;letter-spacing:1px;}
+.filter-row{display:flex;gap:7px;margin-bottom:13px;flex-wrap:wrap;}
+.ftab{padding:6px 13px;border-radius:20px;border:1.5px solid #2a2a4a;background:none;font-size:12px;cursor:pointer;color:#666;font-family:sans-serif;}
+.ftab.on{background:#f5c842;border-color:#f5c842;color:#111;font-weight:700;}
+.ocard{background:#1a1a2e;border-radius:12px;padding:14px;margin-bottom:10px;border-left:4px solid #f5c842;}
+.ocard.jarayon{border-left-color:#3498db;} .ocard.tayyor{border-left-color:#2ecc71;}
+.ocard-top{display:flex;justify-content:space-between;flex-wrap:wrap;gap:5px;margin-bottom:9px;}
+.ocard-stol{font-size:18px;font-weight:700;color:#f5c842;}
+.ocard-who{font-size:12px;color:#666;margin-top:2px;}
+.ocard-time{font-size:11px;color:#555;}
+.obadge{display:inline-block;padding:3px 10px;border-radius:10px;font-size:10px;font-weight:700;}
+.oby{background:#2a1a00;color:#f5c842;} .obj{background:#001a2a;color:#3498db;} .obt{background:#001a0a;color:#2ecc71;}
+.oitems{background:#0d0d1a;border-radius:8px;overflow:hidden;margin-bottom:8px;}
+.oirow{display:flex;justify-content:space-between;padding:6px 11px;border-bottom:1px solid #1a1a2e;font-size:13px;}
+.oirow:last-child{border-bottom:none;}
+.oitotal{font-weight:700;color:#f5c842;background:#0a0a14;}
+.onote{font-size:12px;color:#888;font-style:italic;padding:6px 10px;border-left:2px solid #2a2a4a;margin-bottom:8px;}
+.oactions{display:flex;gap:8px;flex-wrap:wrap;align-items:center;}
+.ssel{padding:7px 9px;border-radius:8px;border:1.5px solid #2a2a4a;font-size:12px;background:#0d0d1a;color:#fff;flex:1;min-width:115px;font-family:sans-serif;}
+.odel{padding:7px 13px;background:#2a0000;border:none;border-radius:8px;color:#e74c3c;font-size:12px;font-weight:700;cursor:pointer;font-family:sans-serif;}
+.empty{text-align:center;padding:50px 20px;color:#444;}
+.empty-icon{font-size:44px;margin-bottom:10px;}
+
+.toast{position:fixed;bottom:26px;left:50%;transform:translateX(-50%) translateY(80px);padding:12px 22px;border-radius:10px;font-weight:700;font-size:14px;z-index:9999;transition:transform .35s cubic-bezier(.34,1.56,.64,1);white-space:nowrap;pointer-events:none;}
+.toast.show{transform:translateX(-50%) translateY(0);}
+.toast.ok{background:#2ecc71;color:#fff;} .toast.err{background:#e74c3c;color:#fff;}
+</style>
+</head>
+<body>
+
+<div id="setup">
+  <h1>🍽️ Restoran Tizimi</h1>
+  <div class="sbox">
+    <h3>Firebase URL kiriting</h3>
+    <input class="sinp" id="fb-url" type="url" placeholder="https://shashlik-markazi-default-rtdb.firebaseio.com">
+    <button class="sbtn" onclick="saveSetup()">✓ Boshlash</button>
+  </div>
+</div>
+
+<div id="home">
+  <div class="topbar">
+    <div style="display:flex;align-items:center">
+      <span class="cdot" id="cdot"></span>
+      <span class="topbar-title">🍽️ Restoran</span>
+    </div>
+    <div class="role-tabs">
+      <button class="rtab on" id="tw" onclick="switchRole('w')">📝 Ofitsiant</button>
+      <button class="rtab" id="tb" onclick="switchRole('b')">👨‍💼 Boshliq</button>
+    </div>
+  </div>
+
+  <div id="wview">
+    <div class="tables-wrap">
+      <div class="sec-title">Stolni tanlang</div>
+      <div class="legend">
+        <div class="leg"><div class="ldot" style="background:#2ecc71"></div>Bo'sh</div>
+        <div class="leg"><div class="ldot" style="background:#f5c842"></div>Zakaz bor</div>
+        <div class="leg"><div class="ldot" style="background:#3498db"></div>Tayyor</div>
+      </div>
+      <div class="tgrid" id="wtables"></div>
+    </div>
+  </div>
+
+  <div id="bview" style="display:none">
+    <div class="boss-wrap">
+      <div class="bstats">
+        <div class="bstat"><div class="bstat-num" id="bst">0</div><div class="bstat-lbl">Jami</div></div>
+        <div class="bstat"><div class="bstat-num" style="color:#f5c842" id="bsy">0</div><div class="bstat-lbl">Yangi</div></div>
+        <div class="bstat"><div class="bstat-num" style="color:#2ecc71" id="bsf">0</div><div class="bstat-lbl">Tayyor</div></div>
+      </div>
+      <div class="sec-title" style="margin-bottom:10px">Stollar holati</div>
+      <div class="tgrid" id="btables" style="margin-bottom:16px"></div>
+      <hr style="border:none;border-top:1px solid #2a2a4a;margin-bottom:14px;">
+      <div class="sec-title" style="margin-bottom:10px">Barcha zakaslar</div>
+      <div class="filter-row">
+        <button class="ftab on" onclick="bfilt('all',this)">Barchasi</button>
+        <button class="ftab" onclick="bfilt('yangi',this)">Yangi</button>
+        <button class="ftab" onclick="bfilt('jarayon',this)">Jarayonda</button>
+        <button class="ftab" onclick="bfilt('tayyor',this)">Tayyor</button>
+      </div>
+      <div id="border"></div>
+    </div>
+  </div>
+</div>
+
+<!-- STOL MODAL -->
+<div id="modal">
+  <div class="mbox" id="mbox">
+    <div class="mhead">
+      <span class="mtitle" id="mtitle">🪑 Stol</span>
+      <button class="mclose" onclick="closeModal()">×</button>
+    </div>
+
+    <!-- Mavjud zakaslar -->
+    <div id="exist-sec"></div>
+
+    <hr class="form-sep">
+
+    <!-- Yangi zakaz -->
+    <div style="font-size:13px;color:#f5c842;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:10px;">➕ Yangi zakaz</div>
+    <label class="flbl">Ofitsiant ismi</label>
+    <input class="finp" id="mwaiter" type="text" placeholder="Ismingiz">
+
+    <div class="menu-sec">
+      <div class="menu-sec-title">🥟 Taomlar</div>
+      <div class="mgrid" id="menu-taom"></div>
+    </div>
+    <div class="menu-sec">
+      <div class="menu-sec-title">🥤 Ichimliklar</div>
+      <div class="mgrid" id="menu-ich"></div>
+    </div>
+    <div class="manual-box">
+      <div style="font-size:11px;color:#888;letter-spacing:1px;text-transform:uppercase;margin-bottom:10px;">✍️ Qo'lda qo'shish</div>
+      <div id="mitems"></div>
+      <button class="add-btn" onclick="addMItem()">+ Qo'lda taom qo'shish</button>
+    </div>
+    <div class="total-line" id="mtotal"></div>
+    <label class="flbl">Izoh</label>
+    <textarea class="finp" id="mnote" placeholder="Maxsus talab..."></textarea>
+    <button class="submit-btn" onclick="submitOrder()">✓ ZAKAZ YUBORISH</button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script type="module">
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
+import { getDatabase, ref, push, onValue, update, remove } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js';
+
+const MENU = {
+  taom:[
+    {id:'t1',name:'Somsa',price:10000},
+    {id:'t2',name:'Tabaka (1 kg)',price:70000},
+    {id:'t3',name:'Shashlik',price:24000},
+  ],
+  ich:[
+    {id:'i1',name:'Coca-Cola 1L',price:12000},
+    {id:'i2',name:'Coca-Cola 1.5L',price:16000},
+    {id:'i3',name:'Sok',price:13000},
+    {id:'i4',name:'Fanta 1L',price:12000},
+    {id:'i5',name:'Fanta 1.5L',price:16000},
+    {id:'i6',name:'Piva',price:12000},
+  ]
+};
+const ALL_ITEMS = [...MENU.taom, ...MENU.ich];
+const TOTAL_TABLES = 20;
+const FK = 'rz_url_v8';
+
+let db, ordRef, unsub;
+let allOrders = [];
+let curTable = null;
+let bfVal = 'all';
+let miCount = 0;
+let menuSel = {};
+
+// ── SETUP ──────────────────────────────────────────────────────
+window.saveSetup = function(){
+  let url = document.getElementById('fb-url').value.trim().replace(/\/+$/, '');
+  if(!url.startsWith('https://')){
+    alert('URL noto\'g\'ri!');
+    return;
+  }
+  localStorage.setItem(FK, url);
+  boot(url);
+};
+
+function boot(url){
+  try {
+    const app = initializeApp({ databaseURL: url }, 'app');
+    db = getDatabase(app);
+    ordRef = ref(db, 'orders');
+    document.getElementById('setup').style.display = 'none';
+    const h = document.getElementById('home');
+    h.style.display = 'flex';
+    h.style.flexDirection = 'column';
+    listenOrders();
+  } catch(e) {
+    alert('Firebase xato: ' + e.message);
+  }
+}
+
+const sv = localStorage.getItem(FK);
+if(sv){ document.getElementById('setup').style.display = 'none'; boot(sv); }
+
+// ── LISTEN ─────────────────────────────────────────────────────
+function listenOrders(){
+  if(unsub) unsub();
+  unsub = onValue(ordRef, snap => {
+    allOrders = [];
+    snap.forEach(c => {
+      const val = c.val();
+      if(val && val.stol) {
+        allOrders.push({ _k: c.key, ...val });
+      }
+    });
+    allOrders.sort((a, b) => b.ts - a.ts);
+    renderAll();
+    document.getElementById('cdot').className = 'cdot';
+  }, () => {
+    document.getElementById('cdot').className = 'cdot off';
+  });
+}
+
+// ── RENDER ─────────────────────────────────────────────────────
+function renderAll(){
+  renderTables('wtables', true);
+  renderTables('btables', false);
+  renderBoss();
+  if(curTable !== null) renderExist(curTable);
+}
+
+function tOrd(n){ return allOrders.filter(o => Number(o.stol) === Number(n)); }
+
+function tSt(n){
+  const o = tOrd(n);
+  if(!o.length) return 'empty';
+  if(o.some(x => x.status === 'yangi' || x.status === 'jarayon')) return 'active';
+  return 'done';
+}
+
+function renderTables(gid, clickable){
+  const g = document.getElementById(gid);
+  if(!g) return;
+  g.innerHTML = '';
+  for(let i = 1; i <= TOTAL_TABLES; i++){
+    const st = tSt(i);
+    const cnt = tOrd(i).length;
+    const d = document.createElement('div');
+    d.className = 'tcell ' + st;
+    if(clickable) d.onclick = () => openModal(i);
+    const lbl = st === 'empty' ? 'Bo\'sh' : cnt + '📋';
+    d.innerHTML = `<div class="tnum">${i}</div><div class="tlbl">${lbl}</div>`;
+    g.appendChild(d);
+  }
+}
+
+// ── BOSS ───────────────────────────────────────────────────────
+function renderBoss(){
+  const total = allOrders.length;
+  const yangi = allOrders.filter(o => o.status === 'yangi').length;
+  const tayyor = allOrders.filter(o => o.status === 'tayyor').length;
+
+  document.getElementById('bst').textContent = total;
+  document.getElementById('bsy').textContent = yangi;
+  document.getElementById('bsf').textContent = tayyor;
+
+  const fl = bfVal === 'all' ? allOrders : allOrders.filter(o => o.status === bfVal);
+  const el = document.getElementById('border');
+
+  if(!fl.length){
+    el.innerHTML = '<div class="empty"><div class="empty-icon">📋</div>' +
+      (total > 0 ? 'Bu filtda zakaslar yo\'q' : 'Hali zakaslar yo\'q') +
+      '</div>';
+    return;
+  }
+
+  el.innerHTML = fl.map(o => {
+    const sc = o.status === 'jarayon' ? 'jarayon' : o.status === 'tayyor' ? 'tayyor' : '';
+    const bc = o.status === 'yangi' ? 'oby' : o.status === 'jarayon' ? 'obj' : 'obt';
+    const bt = o.status === 'yangi' ? '🟡 Yangi' : o.status === 'jarayon' ? '🔵 Jarayonda' : '🟢 Tayyor';
+    const itemList = Array.isArray(o.items) ? o.items : [];
+    const rows = itemList.map(it =>
+      `<div class="oirow">
+        <span>${it.name}${it.qty > 1 ? ' ×' + it.qty : ''}</span>
+        ${it.price > 0 ? `<span style="color:#f5c842">${fmt(it.total)}</span>` : ''}
+      </div>`
+    ).join('');
+    const tot = o.grand > 0 ? `<div class="oirow oitotal"><span>JAMI</span><span>${fmt(o.grand)}</span></div>` : '';
+    return `<div class="ocard ${sc}">
+      <div class="ocard-top">
+        <div>
+          <div class="ocard-stol">🪑 Stol ${o.stol}</div>
+          <div class="ocard-who">${o.ofitsiant || ''}</div>
+        </div>
+        <div style="text-align:right">
+          <div class="ocard-time">⏱ ${o.time || ''}</div>
+          <span class="obadge ${bc}">${bt}</span>
+        </div>
+      </div>
+      <div class="oitems">${rows || '<div class="oirow"><span style="color:#555">Taomlar yo\'q</span></div>'}${tot}</div>
+      ${o.izoh ? `<div class="onote">💬 ${o.izoh}</div>` : ''}
+      <div class="oactions">
+        <select class="ssel" onchange="chSt('${o._k}',this.value)">
+          <option value="yangi"${o.status==='yangi'?' selected':''}>🟡 Yangi</option>
+          <option value="jarayon"${o.status==='jarayon'?' selected':''}>🔵 Bajarilmoqda</option>
+          <option value="tayyor"${o.status==='tayyor'?' selected':''}>🟢 Tayyor</option>
+        </select>
+        <button class="odel" onclick="delO('${o._k}')">× O'chirish</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+window.bfilt = function(f, btn){
+  bfVal = f;
+  document.querySelectorAll('.ftab').forEach(b => b.classList.remove('on'));
+  btn.classList.add('on');
+  renderBoss();
+};
+
+window.chSt = async function(k, st){
+  await update(ref(db, 'orders/' + k), { status: st });
+};
+
+window.delO = async function(k){
+  await remove(ref(db, 'orders/' + k));
+};
+
+// ── MODAL ──────────────────────────────────────────────────────
+window.openModal = function(n){
+  curTable = n;
+  menuSel = {};
+  miCount = 0;
+  document.getElementById('mtitle').textContent = '🪑 Stol — ' + n;
+  document.getElementById('mwaiter').value = '';
+  document.getElementById('mnote').value = '';
+  document.getElementById('mitems').innerHTML = '';
+  document.getElementById('mtotal').style.display = 'none';
+  buildMenuUI('menu-taom', MENU.taom);
+  buildMenuUI('menu-ich', MENU.ich);
+  renderExist(n);
+  document.getElementById('modal').classList.add('open');
+  document.body.style.overflow = 'hidden';
+};
+
+function renderExist(n){
+  const sec = document.getElementById('exist-sec');
+  if(!sec) return;
+  const ords = tOrd(n);
+  if(!ords.length){
+    sec.innerHTML = '';
+    return;
+  }
+  sec.innerHTML = `<div style="font-size:12px;color:#aaa;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;">📋 Bu stoldagi zakaslar</div>` +
+  ords.map(o => {
+    const bc = o.status==='yangi'?'eby':o.status==='jarayon'?'ebj':'ebt';
+    const bt = o.status==='yangi'?'🟡 Yangi':o.status==='jarayon'?'🔵 Jarayonda':'🟢 Tayyor';
+    const rows = (o.items||[]).map(it =>
+      `<div class="eitem-row">
+        <span>${it.name}${it.qty>1?' ×'+it.qty:''}</span>
+        ${it.price>0?`<span class="eitem-price">${fmt(it.total)}</span>`:''}
+      </div>`
+    ).join('');
+    return `<div class="eord-card ${o.status==='jarayon'?'jarayon':o.status==='tayyor'?'tayyor':''}">
+      <div class="eord-top">
+        <span class="eord-who">${o.ofitsiant} ⏱${o.time}</span>
+        <span class="ebadge ${bc}">${bt}</span>
+      </div>
+      ${rows}
+      ${o.grand>0?`<div class="eord-total"><span>Jami:</span><span>${fmt(o.grand)}</span></div>`:''}
+
+      <!-- Zakasga qo'shish tugmasi -->
+      <button class="add-to-btn" onclick="toggleAddTo('atf-${o._k}')">
+        ➕ Shu zakasga taom qo'shish
+      </button>
+      <div class="add-to-form" id="atf-${o._k}">
+        <div style="font-size:11px;color:#888;margin-bottom:8px;text-transform:uppercase;letter-spacing:1px;">Qo'shimcha taomlar</div>
+        <div id="atf-items-${o._k}"></div>
+        <button class="add-btn" style="margin:4px 0 8px" onclick="addATFItem('${o._k}')">+ Taom qo'shish</button>
+        <button class="save-add-btn" onclick="saveAddTo('${o._k}')">✓ Qo'shib saqlash</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// Add to existing order
+window.toggleAddTo = function(formId){
+  const f = document.getElementById(formId);
+  f.classList.toggle('open');
+  if(f.classList.contains('open') && f.querySelector('[id^="atf-items-"]').children.length === 0){
+    const key = formId.replace('atf-', '');
+    addATFItem(key);
+  }
+};
+
+window.addATFItem = function(key){
+  const container = document.getElementById('atf-items-' + key);
+  const id = Date.now();
+  const row = document.createElement('div');
+  row.className = 'irow';
+  row.id = 'atfr-' + id;
+  row.innerHTML = `<input class="finp" type="text" placeholder="Taom nomi" style="padding:9px;margin:0">
+    <input class="finp finp-s" type="number" placeholder="Narx" min="0" style="width:80px;padding:9px;margin:0">
+    <input class="finp finp-xs" type="number" value="1" min="1" style="width:56px;padding:9px;margin:0">
+    <button class="idel" onclick="document.getElementById('atfr-${id}').remove()">×</button>`;
+  container.appendChild(row);
+  row.querySelector('input').focus();
+};
+
+window.saveAddTo = async function(key){
+  const container = document.getElementById('atf-items-' + key);
+  const rows = container.querySelectorAll('.irow');
+  const newItems = [];
+  rows.forEach(r => {
+    const ins = r.querySelectorAll('input');
+    const name = ins[0].value.trim();
+    const price = parseFloat(ins[1].value) || 0;
+    const qty = parseInt(ins[2].value) || 1;
+    if(name) newItems.push({ name, price, qty, total: price * qty });
+  });
+  if(!newItems.length){ toast('❌ Taom kiriting!', 'err'); return; }
+
+  const order = allOrders.find(o => o._k === key);
+  if(!order){ toast('❌ Zakaz topilmadi!', 'err'); return; }
+
+  const updatedItems = [...(order.items || []), ...newItems];
+  const updatedGrand = updatedItems.reduce((s, i) => s + i.total, 0);
+
+  try {
+    await update(ref(db, 'orders/' + key), {
+      items: updatedItems,
+      grand: updatedGrand
+    });
+    toast('✅ Taomlar qo\'shildi!', 'ok');
+    document.getElementById('atf-' + key).classList.remove('open');
+  } catch(e) {
+    toast('❌ ' + e.message, 'err');
+  }
+};
+
+window.closeModal = function(){
+  document.getElementById('modal').classList.remove('open');
+  document.body.style.overflow = '';
+  curTable = null;
+};
+document.getElementById('modal').addEventListener('click', e => {
+  if(e.target === document.getElementById('modal')) closeModal();
+});
+
+// ── MENU UI ────────────────────────────────────────────────────
+function buildMenuUI(gridId, items){
+  const g = document.getElementById(gridId);
+  g.innerHTML = '';
+  items.forEach(item => {
+    const d = document.createElement('div');
+    d.className = 'mi';
+    d.id = 'mi-' + item.id;
+    d.onclick = () => toggleMI(item.id);
+    d.innerHTML = `<div class="mi-name">${item.name}</div>
+      <div class="mi-price">${fmt(item.price)}</div>
+      <div class="miqty" id="mq-${item.id}" style="display:none" onclick="event.stopPropagation()">
+        <button class="qbtn" onclick="mqty('${item.id}',-1)">−</button>
+        <span class="qnum" id="mqn-${item.id}">1</span>
+        <button class="qbtn" onclick="mqty('${item.id}',1)">+</button>
+      </div>`;
+    g.appendChild(d);
+  });
+}
+
+function toggleMI(id){
+  if(menuSel[id]){
+    delete menuSel[id];
+    document.getElementById('mi-' + id).classList.remove('sel');
+    document.getElementById('mq-' + id).style.display = 'none';
+  } else {
+    menuSel[id] = 1;
+    document.getElementById('mi-' + id).classList.add('sel');
+    document.getElementById('mq-' + id).style.display = 'flex';
+    document.getElementById('mqn-' + id).textContent = '1';
+  }
+  calcTotal();
+}
+
+window.mqty = function(id, d){
+  if(!menuSel[id]) return;
+  menuSel[id] = Math.max(1, (menuSel[id] || 1) + d);
+  document.getElementById('mqn-' + id).textContent = menuSel[id];
+  calcTotal();
+};
+
+window.addMItem = function(){
+  miCount++;
+  const id = miCount;
+  const row = document.createElement('div');
+  row.className = 'irow';
+  row.id = 'mr' + id;
+  row.innerHTML = `<input class="finp" type="text" placeholder="Taom nomi" oninput="calcTotal()" style="padding:9px;margin:0">
+    <input class="finp finp-s" type="number" placeholder="Narx" min="0" oninput="calcTotal()" style="width:80px;padding:9px;margin:0">
+    <input class="finp finp-xs" type="number" value="1" min="1" oninput="calcTotal()" style="width:56px;padding:9px;margin:0">
+    <button class="idel" onclick="delMI(${id})">×</button>`;
+  document.getElementById('mitems').appendChild(row);
+  row.querySelector('input').focus();
+};
+
+window.delMI = function(id){
+  const el = document.getElementById('mr' + id);
+  if(el) el.remove();
+  calcTotal();
+};
+
+window.calcTotal = function(){
+  let total = 0;
+  Object.keys(menuSel).forEach(id => {
+    const item = ALL_ITEMS.find(i => i.id === id);
+    if(item) total += item.price * menuSel[id];
+  });
+  document.querySelectorAll('#mitems .irow').forEach(r => {
+    const ins = r.querySelectorAll('input');
+    total += (parseFloat(ins[1].value) || 0) * (parseFloat(ins[2].value) || 1);
+  });
+  const box = document.getElementById('mtotal');
+  if(total > 0){ box.style.display = 'block'; box.textContent = 'Jami: ' + fmt(total); }
+  else box.style.display = 'none';
+};
+
+window.submitOrder = async function(){
+  const waiter = document.getElementById('mwaiter').value.trim();
+  const note = document.getElementById('mnote').value.trim();
+  if(!waiter){ toast('❌ Ofitsiant ismini kiriting!', 'err'); return; }
+
+  const items = [];
+  Object.keys(menuSel).forEach(id => {
+    const item = ALL_ITEMS.find(i => i.id === id);
+    if(item) items.push({ name: item.name, price: item.price, qty: menuSel[id], total: item.price * menuSel[id] });
+  });
+  document.querySelectorAll('#mitems .irow').forEach(r => {
+    const ins = r.querySelectorAll('input');
+    const name = ins[0].value.trim();
+    const price = parseFloat(ins[1].value) || 0;
+    const qty = parseInt(ins[2].value) || 1;
+    if(name) items.push({ name, price, qty, total: price * qty });
+  });
+  if(!items.length){ toast('❌ Hech narsa tanlanmagan!', 'err'); return; }
+
+  const grand = items.reduce((s, i) => s + i.total, 0);
+  const now = new Date();
+  const time = now.getHours().toString().padStart(2,'0') + ':' + now.getMinutes().toString().padStart(2,'0');
+
+  try {
+    await push(ordRef, {
+      stol: curTable,
+      ofitsiant: waiter,
+      izoh: note,
+      items,
+      grand,
+      status: 'yangi',
+      time,
+      ts: Date.now()
+    });
+    toast('✅ Stol ' + curTable + ' — zakaz yuborildi!', 'ok');
+    menuSel = {};
+    miCount = 0;
+    document.getElementById('mwaiter').value = '';
+    document.getElementById('mnote').value = '';
+    document.getElementById('mitems').innerHTML = '';
+    document.getElementById('mtotal').style.display = 'none';
+    buildMenuUI('menu-taom', MENU.taom);
+    buildMenuUI('menu-ich', MENU.ich);
+  } catch(e) {
+    toast('❌ ' + e.message, 'err');
+  }
+};
+
+window.switchRole = function(r){
+  document.getElementById('wview').style.display = r === 'w' ? 'block' : 'none';
+  document.getElementById('bview').style.display = r === 'b' ? 'block' : 'none';
+  document.getElementById('tw').className = 'rtab' + (r === 'w' ? ' on' : '');
+  document.getElementById('tb').className = 'rtab' + (r === 'b' ? ' on' : '');
+};
+
+function fmt(n){ return Number(n).toLocaleString('uz-UZ') + ' so\'m'; }
+
+window.toast = function(msg, type){
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.className = 'toast show ' + (type === 'ok' ? 'ok' : 'err');
+  setTimeout(() => el.className = 'toast', 3000);
+};
+</script>
+</body>
+</html>
